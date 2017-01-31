@@ -35,7 +35,7 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
-      "headless": false,
+      "headless": "{{user `headless`}}",
       "boot_wait": "2m",
       "winrm_username": "vagrant",
       "winrm_password": "vagrant",
@@ -70,7 +70,7 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
-      "headless": false,
+      "headless": "{{user `headless`}}",
       "boot_wait": "2m",
       "winrm_username": "vagrant",
       "winrm_password": "vagrant",
@@ -149,6 +149,7 @@
     "iso_checksum_type": "md5",
     "iso_checksum": "18a4f00a675b0338f3c7c93c4f131beb",
     "autounattend": "./answer_files/2016/Autounattend.xml",
-    "hyperv_switchname": "{{env `hyperv_switchname`}}"
+    "hyperv_switchname": "{{env `hyperv_switchname`}}",
+    "headless": "true"
   }
 }
