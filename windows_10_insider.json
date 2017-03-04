@@ -1,48 +1,20 @@
 {
   "builders": [
     {
-      "vm_name":"WindowsServer2016",
-      "type": "hyperv-iso",
-      "disk_size": 41440,
-      "boot_wait": "0s",
-      "guest_additions_mode":"disable",
-      "iso_url": "{{user `iso_url`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "floppy_files": [
-        "{{user `autounattend`}}",
-        "./floppy/WindowsPowershell.lnk",
-        "./floppy/PinTo10.exe",
-        "./scripts/disable-screensaver.ps1",
-        "./scripts/disable-winrm.ps1",
-        "./scripts/enable-winrm.ps1",
-        "./scripts/microsoft-updates.bat",
-        "./scripts/win-updates.ps1"
-      ],
-      "communicator":"winrm",
-      "winrm_username": "vagrant",
-      "winrm_password": "vagrant",
-      "winrm_timeout" : "4h",
-      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
-      "ram_size": 2048,
-      "cpu": 2,
-      "switch_name":"{{user `hyperv_switchname`}}",
-      "enable_secure_boot":true
-    },
-    {
       "type": "vmware-iso",
       "communicator": "winrm",
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
-      "headless": "{{user `headless`}}",
-      "boot_wait": "2m",
+      "headless": false,
+      "boot_wait": "6m",
+      "boot_command": "",
       "winrm_username": "vagrant",
       "winrm_password": "vagrant",
-      "winrm_timeout": "6h",
+      "winrm_timeout": "2h",
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
       "guest_os_type": "windows8srv-64",
-      "disk_size": 61440,
+      "disk_size": "{{user `disk_size`}}",
       "vnc_port_min": 5900,
       "vnc_port_max": 5980,
       "version": 11,
@@ -50,6 +22,7 @@
         "{{user `autounattend`}}",
         "./floppy/WindowsPowershell.lnk",
         "./floppy/PinTo10.exe",
+        "./scripts/fixnetwork.ps1",
         "./scripts/disable-screensaver.ps1",
         "./scripts/disable-winrm.ps1",
         "./scripts/enable-winrm.ps1",
@@ -70,19 +43,21 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
-      "headless": "{{user `headless`}}",
-      "boot_wait": "2m",
+      "headless": false,
+      "boot_wait": "6m",
+      "boot_command": "",
       "winrm_username": "vagrant",
       "winrm_password": "vagrant",
-      "winrm_timeout": "6h",
+      "winrm_timeout": "2h",
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
-      "guest_os_type": "Windows2012_64",
+      "guest_os_type": "Windows81_64",
       "guest_additions_mode": "disable",
-      "disk_size": 61440,
+      "disk_size": "{{user `disk_size`}}",
       "floppy_files": [
         "{{user `autounattend`}}",
         "./floppy/WindowsPowershell.lnk",
         "./floppy/PinTo10.exe",
+        "./scripts/fixnetwork.ps1",
         "./scripts/disable-screensaver.ps1",
         "./scripts/disable-winrm.ps1",
         "./scripts/enable-winrm.ps1",
@@ -109,10 +84,12 @@
   "provisioners": [
     {
       "type": "windows-shell",
+      "remote_path": "/tmp/script.bat",
       "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
       "scripts": [
         "./scripts/vm-guest-tools.bat",
-        "./scripts/enable-rdp.bat"
+        "./scripts/enable-rdp.bat",
+        "./scripts/enable-uac.bat"
       ]
     },
     {
@@ -125,13 +102,20 @@
       "type": "windows-restart"
     },
     {
+      "type": "powershell",
+      "scripts": [
+        "./scripts/set-powerplan.ps1",
+        "./scripts/docker/disable-windows-defender.ps1"
+      ]
+    },
+    {
       "type": "windows-shell",
+      "remote_path": "/tmp/script.bat",
       "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
       "scripts": [
         "./scripts/pin-powershell.bat",
-        "./scripts/set-winrm-automatic.bat",
         "./scripts/compile-dotnet-assemblies.bat",
-        "./scripts/uac-enable.bat",
+        "./scripts/set-winrm-automatic.bat",
         "./scripts/compact.bat"
       ]
     }
@@ -140,16 +124,16 @@
     {
       "type": "vagrant",
       "keep_input_artifact": false,
-      "output": "windows_2016_{{.Provider}}.box",
-      "vagrantfile_template": "vagrantfile-windows_2016.template"
+      "output": "windows_10_insider_{{.Provider}}.box",
+      "vagrantfile_template": "vagrantfile-windows_10.template"
     }
   ],
   "variables": {
-    "iso_url": "http://care.dlservice.microsoft.com/dl/download/1/4/9/149D5452-9B29-4274-B6B3-5361DBDA30BC/14393.0.161119-1705.RS1_REFRESH_SERVER_EVAL_X64FRE_EN-US.ISO",
-    "iso_checksum_type": "md5",
-    "iso_checksum": "70721288BBCDFE3239D8F8C0FAE55F1F",
-    "autounattend": "./answer_files/2016/Autounattend.xml",
-    "hyperv_switchname": "{{env `hyperv_switchname`}}",
-    "headless": "true"
+    "manually_download_iso_from": "https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewadvanced",
+    "iso_url": "https://software-download.microsoft.com/pr/Windows10_InsiderPreview_EnterpriseVL_x64_en-us_15042.iso",
+    "iso_checksum_type": "sha1",
+    "iso_checksum": "e7b84c020fb9cbe34c50b18b9d4ce6bffe973387",
+    "autounattend": "./answer_files/10_insider/Autounattend.xml",
+    "disk_size": "61440"
   }
 }
