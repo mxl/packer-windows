@@ -127,14 +127,13 @@
       "disk_size": "{{user `disk_size`}}",
       "floppy_files": [
         "{{user `autounattend`}}",
-        "./floppy/WindowsPowershell.lnk",
-        "./floppy/PinTo10.exe",
         "./scripts/disable-screensaver.ps1",
         "./scripts/disable-winrm.ps1",
         "./scripts/enable-winrm.ps1",
         "./scripts/microsoft-updates.bat",
-        "./scripts/win-updates.ps1",
-        "./scripts/oracle-cert.cer"
+        "./scripts/unattend.xml",
+        "./scripts/sysprep.bat",
+        "./scripts/win-updates.ps1"
       ],
       "prlctl": [
         ["set", "{{.Name}}", "--memsize", "2048"],
