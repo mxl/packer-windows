@@ -1,22 +1,49 @@
-Set-ExecutionPolicy Bypass -scope Process
-New-Item -Type Directory -Path "$($env:ProgramFiles)\docker"
-# wget -outfile $env:TEMP\docker-cs-1.12.zip "https://download.docker.com/components/engine/windows-server/cs-1.12/docker-1.12.2.zip"
-wget -outfile $env:TEMP\docker-1.13.0.zip "https://get.docker.com/builds/Windows/x86_64/docker-1.13.0.zip"
-Expand-Archive -Path $env:TEMP\docker-1.13.0.zip -DestinationPath $env:TEMP -Force
-copy $env:TEMP\docker\*.exe $env:ProgramFiles\docker
-Remove-Item $env:TEMP\docker-1.13.0.zip
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$($env:ProgramFiles)\docker", [EnvironmentVariableTarget]::Machine)
-$env:Path = $env:Path + ";$($env:ProgramFiles)\docker"
-. dockerd --register-service -H npipe:// -H 0.0.0.0:2375 -G docker
+$docker_provider = "ee"
+$docker_version = "18-03-1-ee-2"
+if (Test-Path env:docker_provider) {
+  $docker_provider = $env:docker_provider  
+}
+if (Test-Path env:docker_version) {
+  $docker_version = $env:docker_version  
+}
 
-Write-Host "Fix --restart=always for reboot ..."
-# see https://github.com/docker/docker/issues/27544
-& sc.exe config Docker depend= LanmanWorkstation
+$ProgressPreference = 'SilentlyContinue'
+if ($docker_provider -eq "ce") {
+  Set-ExecutionPolicy Bypass -scope Process
+  New-Item -Type Directory -Path "$($env:ProgramFiles)\docker"
+  Write-Output "Downloading docker $docker_version ..."
+  wget -outfile $env:TEMP\docker.zip $("https://download.docker.com/win/static/edge/x86_64/docker-{0}-ce.zip" -f $docker_version)
+  Expand-Archive -Path $env:TEMP\docker.zip -DestinationPath $env:TEMP -Force
+  copy $env:TEMP\docker\*.exe $env:ProgramFiles\docker
+  Remove-Item $env:TEMP\docker.zip
+  [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$($env:ProgramFiles)\docker", [EnvironmentVariableTarget]::Machine)
+  $env:Path = $env:Path + ";$($env:ProgramFiles)\docker"
+  Write-Output "Registering docker service ..."
+  . dockerd --register-service
+} elseif ($docker_provider -eq "ee") {
+  Set-ExecutionPolicy Bypass -scope Process
+  New-Item -Type Directory -Path "$($env:ProgramFiles)\docker"
+  Write-Output "Downloading docker $docker_version ..."
+  wget -outfile $env:TEMP\docker.zip $("https://dockermsft.blob.core.windows.net/dockercontainer/docker-{0}.zip" -f $docker_version)
+  Expand-Archive -Path $env:TEMP\docker.zip -DestinationPath $env:TEMP -Force
+  copy $env:TEMP\docker\*.exe $env:ProgramFiles\docker
+  Remove-Item $env:TEMP\docker.zip
+  [Environment]::SetEnvironmentVariable("Path", $env:Path + ";$($env:ProgramFiles)\docker", [EnvironmentVariableTarget]::Machine)
+  $env:Path = $env:Path + ";$($env:ProgramFiles)\docker"
+  Write-Output "Registering docker service ..."
+  . dockerd --register-service
+} else {
+  Write-Output "Install-PackageProvider ..."
+  Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+  Write-Output "Install-Module $docker_provider ..."
+  Install-Module -Name $docker_provider -Repository PSGallery -Force
+  Write-Output "Install-Package docker version $docker_version ..."
+  Set-PSRepository -InstallationPolicy Trusted -Name PSGallery
+  $ErrorActionStop = 'SilentlyContinue'
+  Install-Package -Name docker -ProviderName $docker_provider -RequiredVersion $docker_version -Force
+  Set-PSRepository -InstallationPolicy Untrusted -Name PSGallery  
+}
 
-Start-Service Docker
-
-Write-Host "Installing WindowsServerCore container image..."
-& "C:\Program Files\docker\docker.exe" pull microsoft/windowsservercore
-
-Write-Host "Installing NanoServer container image..."
-& "C:\Program Files\docker\docker.exe" pull microsoft/nanoserver
+$ErrorActionPreference = 'Stop'
+Write-Output "Starting docker ..."
+Start-Service docker
