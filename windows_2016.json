@@ -139,6 +139,41 @@
         ["set", "{{.Name}}", "--memsize", "2048"],
         ["set", "{{.Name}}", "--cpus", "2"]
       ]
+    },
+    {
+        "type": "qemu",
+        "accelerator": "kvm",
+        "format": "qcow2",
+        "iso_url": "{{user `iso_url`}}",
+        "iso_checksum_type": "{{user `iso_checksum_type`}}",
+        "iso_checksum": "{{user `iso_checksum`}}",
+        "headless": "{{user `headless`}}",
+        "boot_wait": "2m",
+        "communicator": "winrm",
+        "winrm_username": "vagrant",
+        "winrm_password": "vagrant",
+        "winrm_timeout": "6h",
+        "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+        "disk_interface": "virtio",
+        "disk_size": "{{user `disk_size`}}",
+        "vnc_bind_address": "0.0.0.0",
+        "floppy_files": [
+            "{{user `autounattend`}}",
+            "./drivers/virtio-win-0.1.126/NetKVM/2k16/amd64/*",
+            "./drivers/virtio-win-0.1.126/viostor/2k16/amd64/*",
+            "./floppy/WindowsPowershell.lnk",
+            "./floppy/PinTo10.exe",
+            "./scripts/disable-screensaver.ps1",
+            "./scripts/disable-winrm.ps1",
+            "./scripts/enable-winrm.ps1",
+            "./scripts/microsoft-updates.bat",
+            "./scripts/win-updates.ps1",
+            "./scripts/oracle-cert.cer"
+        ],
+        "qemuargs": [
+            [ "-m", "2048M" ],
+            [ "-smp", "2" ]
+        ]
     }
   ],
   "post-processors": [
